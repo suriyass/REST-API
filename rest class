@@ -1,0 +1,1318 @@
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import org.codehaus.jettison.json.JSONException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+@Path("/user")
+public class sample  { 
+				String id;
+				String dch;
+				List<HostSystem> host ;
+				List<HostSystem> hosts ;
+				ConnectorAccessorServerSideClient nativeCasClient_;
+			    String persist_;
+			    HostSystem hsa  ;
+			    
+@GET
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/version")
+public Response getInformationServerVersion() 
+{
+	String ver = null; 
+	try 
+	{
+		RegistrationService registrationService = ServiceFactory.getInstance().getService(RegistrationService.class);
+		ver =registrationService.getASBServerConfiguration().getVersion();
+	}
+	catch (Exception e) 
+	{
+		System.out.println("Error in invoking rest API to get the IIS version");
+	}
+	return Response.ok("The version of the IIS machine is :" + ver).type(MediaType.TEXT_PLAIN).build();     
+}
+@GET
+@Produces("plain/text")
+@Path("/listHostSystems")
+public Response ListHostSystems() 
+{ 
+	List<HostSystem> hosts = null;
+	StringBuffer allHosts = new StringBuffer("");
+	try 
+		{
+		 	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+		    hosts = nativeCasClient_.listHostSystems();
+		    for (HostSystem host: hosts) 
+				{
+		            String hTmp = host.getName();
+		            allHosts.append(hTmp);
+		            allHosts.append(", "); 
+		         }
+		}
+	catch (Exception ex) 
+		{
+			System.out.println("Error in creating ConnectorAccessorServerSideClient");
+		}     
+	return Response.ok("The list of host systems are : "+ allHosts.toString()).type(MediaType.TEXT_PLAIN).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/listDatabases")
+public Response listDatabases(String hostSystem) throws ConnectorServiceException
+{
+	List<Database> db = null;
+	StringBuffer conn = new StringBuffer("");
+	HostSystem hostObj = ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	try {
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	db = nativeCasClient_.listDatabases(hostObj);
+	for(Database dbc : db )
+	{
+		String tmp = dbc.getName();
+		conn.append(tmp);
+		
+	}
+	
+	}catch(Exception e)
+	{
+		System.out.println(e);
+	}
+	return Response.status(200).entity("Name of databases "+ hostObj.getName()+" is "+conn.toString()).build();
+}
+
+/*@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/listDataSchema")
+public Response listDataSchema(String database) throws ConnectorServiceException
+{
+	List<DataSchema> dsh = null;
+	Database dataBobj_ =  ASCLModelFactory.eINSTANCE.createDatabase();
+	dataBobj_.setName(database);
+	StringBuffer conn = new StringBuffer("");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	dsh =nativeCasClient_.listDataSchemas(dataBobj_);
+	for(DataSchema dh : dsh)
+	{
+		pojo.setDss(dh);
+		String tmp = dh.getName();
+		conn.append(tmp);
+		conn.append(",");
+	}
+	return Response.status(200).entity("The DataSchema are "+conn.toString()).build();
+}*/
+
+
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/connectionTypes")
+public Response getconnectiontypes(String hostSystem) throws ConnectorServiceException, JSONException
+	{
+			HostSystem hs = null ;
+		    List<String> conn_= null;;
+			HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+			hostObj.setName(hostSystem);
+			try {
+			nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+			conn_ = nativeCasClient_ .listConnectionTypes(hs);
+				}
+			 	catch(Exception e)
+				{
+			 		e.printStackTrace();
+				}
+			return Response.status(200).entity("The connection type for the host system "+hostObj.getName()+" is "+conn_).build();
+	}
+@GET
+@Path("/connectorlist")
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public Response getconnectorlist(JSONObject jobj) throws ConnectorServiceException
+{
+	List<Connector> lisConn_ = null;
+	StringBuffer conn = new StringBuffer("");
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) jobj.get("HostSystem");
+	connectionType =(String) jobj.get("ConnectionType");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	try {
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	lisConn_ = nativeCasClient_.listConnectors(hostObj, connectionType);
+	for(Connector cnh : lisConn_)
+	{
+		String tmp = cnh.getName();
+		conn.append(tmp);
+		conn.append(",");
+	}
+	
+	}catch(Exception e)
+	{
+		System.out.println(e);
+	}
+	return Response.status(200).entity("The connector is :"+conn.toString()+hostObj.getName()+lisConn_.get(0).getName()).build();
+}
+
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/listConnectionparameters")
+public Response getConnectionParameters(JSONObject jobj)
+{
+	List<ConnectionParameter> connPara_ = null;
+	StringBuffer conn = new StringBuffer("");
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) jobj.get("HostSystem");
+	connectionType =(String) jobj.get("ConnectionType");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+			try {
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	connPara_ = nativeCasClient_.listDataConnectionParameters(hostObj, connectionType);
+	for (ConnectionParameter cnp : connPara_)
+	{
+		String tmp = cnp.getName();
+		conn.append(tmp);
+		conn.append(",");
+	}
+			}
+catch(Exception e)
+  {
+ 	
+ 	 e.printStackTrace(); 	
+  }
+return Response.status(200).entity("the connection parameters are : "+conn).build();
+}
+
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/listDataFiles")
+public Response getDataFiles(String hostSystem) throws ConnectorServiceException
+{
+	List<DataFile> df = null;
+	StringBuffer conn = new StringBuffer("");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	df = nativeCasClient_.listDataFiles(hostObj);
+	for(DataFile dg : df)
+	{
+		String tmp = dg.getName();
+		conn.append(tmp);
+		conn.append(",");	
+	}
+	return Response.status(200).entity("The datafiles are : "+conn.toString()).build();
+}
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/listDataConnection")
+public Response getlistDataConnection(JSONObject obj) throws ConnectorServiceException
+{
+	DataConnection dc= null;
+
+	List<DataConnection> ldc = null;
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	StringBuffer conn = new StringBuffer("");
+	try {
+		nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+		ldc = nativeCasClient_.listDataConnections(hostObj, connectionType);
+		
+		for (DataConnection dg : ldc)
+		{
+			String tmp = dg.getName();
+			conn.append(tmp);
+			conn.append(",");
+		}
+		
+	}
+	catch(Exception e)
+	{
+		System.out.println(e);
+	}
+	
+	return Response.status(200).entity("The  list of data connection are "+conn.toString()).build();
+	
+}
+@POST
+@Path("/createConnection")
+@Consumes("application/json")
+@Produces("application/json")
+public Response createDataconnection(JSONObject obj) throws ConnectorServiceException, JSONException
+	{
+    	DataConnection dc =null ;
+    	String StageType= null;
+    	String DataName= null;
+    	String connString = null;
+    	String hostSystem = null;
+    	String valueExpress = null;
+	    List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	 		 nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	 		 hostSystem = (String) obj.get("HostSystem");
+			  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+			  hostObj.setName(hostSystem);
+	         DataName  = (String) obj.get("name");
+	         StageType=(String) obj.get("StageType");
+	         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+			 for (int i = 0, size = arrObj.size(); i < size; i++)
+			    {
+				    ConnectionParameter cnp = new  ConnectionParameter();
+				    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+			    	String paramName=  (String) objectInArray.get((String)"parameterName");
+			    	String parameterType = (String) objectInArray.get((String)"parameterType");
+			        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+			        if(paramName=="Password")
+			        {
+			        	valueExpress = DSEncryption.decrypt(valueExpression);
+			        }
+			        else
+			        {
+			        	valueExpress = valueExpression;
+			        }
+			        cnp.setName(paramName); 
+			        cnp.setType(Integer.parseInt(parameterType));
+			        cnp.setValue(valueExpress);
+			        connectionParameters.add(cnp);
+			    }
+			  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+	          dc.setName(DataName);
+	          persist_ = nativeCasClient_.persist(dc, true);
+	          pojo.setDc(dc);
+	          connString = dc.getConnectionString();
+	          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+	          pojo.setConnlog_(cn);
+	      String variant =    dc.getUsedBy_Connector().getVariant();
+		    return Response.status(200).
+		    		entity("The object id of the created Connection is:"+ persist_ +"\n"+dc.getName()+"\n"+"The connection string is "+connString+"\n"+"The variant name is :"+variant).type(MediaType.APPLICATION_JSON).build();  
+	}
+
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/testConnection")
+public Response getconn(JSONObject obj) throws ConnectorServiceException
+{
+	String hostSystem = null;
+	String connectionType = null;
+	StringBuffer conn = new StringBuffer("");
+	String connectionName = null;
+	String variant = null;
+	ConnectionLogical cnn = null;
+	List<String> con = new ArrayList<String>();
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	connectionName = (String) obj.get("name");
+	variant = (String) obj.get("variant");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	List<DataConnection> dataConnections = nativeCasClient_.listDataConnections(hostObj, connectionType);
+	for(DataConnection gh : dataConnections)
+	{
+		String tmp = gh.getName();
+		con.add(tmp);
+		conn.append(tmp);
+		conn.append(",");
+	}
+	String x = null ;
+	for(String s : con) {
+    if(connectionName.equalsIgnoreCase(s)) {
+    x= connectionName;
+   cnn = (ConnectionLogical) nativeCasClient_.getConnection(hostSystem, connectionType, variant);
+   break;
+    }
+    }
+//con1 =	cnn.getSchemaClasses();
+	//if ( == connectionName)
+			//{
+			 //cnn = (ConnectionLogical) nativeCasClient_.getConnection(hostSystem, connectionType, variant);
+			//}
+//	ConnectionLogical cnn = pojo.getConnlog_();
+	//cn.test();
+	return Response.status(200).entity("The connection is "+cnn.toString()).build();
+}
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/getSchemaclass")
+public Response getschema(JSONObject obj) throws ConnectorServiceException
+{
+	String hostSystem = null;
+	String connectionType = null;
+	StringBuffer conn = new StringBuffer("");
+	String connectionName = null;
+	String variant = null;
+	ConnectionLogical cnn = null;
+	List<String> con = new ArrayList<String>();
+	List<String> con1 = new ArrayList<String>();
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	connectionName = (String) obj.get("name");
+	variant = (String) obj.get("variant");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	List<DataConnection> dataConnections = nativeCasClient_.listDataConnections(hostObj, connectionType);
+	for(DataConnection gh : dataConnections)
+	{
+		String tmp = gh.getName();
+		con.add(tmp);
+		conn.append(tmp);
+		conn.append(",");
+	}
+	String x = null ;
+	for(String s : con) {
+    if(connectionName.equalsIgnoreCase(s)) {
+    x= connectionName;
+   cnn = (ConnectionLogical) nativeCasClient_.getConnection(hostSystem, connectionType, variant);
+   break;
+    }
+    }
+con1 =	cnn.getSchemaClasses();
+	return Response.status(200).entity("The connection is "+con1.toString()).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existDataconnection")
+public Response getexistdetails(String connectionName) throws ConnectorServiceException
+{
+
+	String exist_ = null;
+	String respon = null;
+	
+
+
+	DataConnection 	dc  = ASCLModelFactory.eINSTANCE.createDataConnection();
+		dc.setName(connectionName);
+		
+		nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+		exist_ = (String)nativeCasClient_.exists(dc);
+		if (exist_ != null)
+		{
+			respon = "exist";		}
+		else
+		{
+			respon = "does not exist";
+		}
+
+	 
+	 return Response.status(200).entity("The existence of the connection is:"+ respon).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existDatabase")
+public Response existDatabase(String database) throws ConnectorServiceException
+{
+String exist_ = null;
+String respon = null;
+Database dataBobj_ = ASCLModelFactory.eINSTANCE.createDatabase();
+dataBobj_.setName(database);
+nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+exist_ = nativeCasClient_.exists(dataBobj_);
+if (exist_ != null)
+{
+	respon = " do exist";		}
+else
+{
+	respon = "does not exist";
+}
+return Response.status(200).entity("The database"+dataBobj_.getName()+respon).build();
+
+}
+
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existDatacollection")
+public Response existDatacollection(String dataCollection) throws ConnectorServiceException
+{
+	String exist_ = null;
+	String respon = null;
+	DataCollection dataCobj_ = ASCLModelFactory.eINSTANCE.createDataCollection();
+	dataCobj_.setName(dataCollection);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	exist_ = nativeCasClient_.exists(dataCobj_);
+	if (exist_ != null)
+	{
+		respon = "exist";		}
+	else
+	{
+		respon = "does not exist";
+	}
+	return Response.status(200).entity("The dataCollection"+dataCobj_.getName()+ respon).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existDatafile")
+public  Response existDatafile(String dataFile) throws ConnectorServiceException
+{
+	String exist_ = null;
+	String respon = null;
+	DataFile dataFobj_=  ASCLModelFactory.eINSTANCE.createDataFile();
+	dataFobj_.setName(dataFile);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	exist_ =  nativeCasClient_.exists(dataFobj_);
+	if (exist_ != null)
+	{
+		respon = "exist";		}
+	else
+	{
+		respon = "does not exist";
+	}
+	return Response.status(200).entity("The existence of the connection is:"+ respon).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existDataschema")
+public Response existDataschema(String dataSchema) throws ConnectorServiceException
+{
+	String exist_ = null;
+	String respon  = null;
+	DataSchema dataSobj_ = ASCLModelFactory.eINSTANCE.createDataSchema();
+	dataSobj_.setName(dataSchema);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	exist_ = nativeCasClient_.exists(dataSobj_);
+	if (exist_ != null)
+	{
+		respon = "exist";		}
+	else
+	{
+		respon = "does not exist"; }
+	return Response.status(200).entity("The existence of the connection is:"+respon ).build();
+} 
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/existHostsystem")
+public Response existHostsystem(String hostSystem) throws ConnectorServiceException
+{
+	String exist_ = null;
+	String respon = null;
+	HostSystem hostObj = ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	exist_ = nativeCasClient_.exists(hostObj);
+	if (exist_ != null)
+	{
+		respon = "exist";		}
+	else
+	{
+		respon = "does not exist";
+	}
+	return Response.status(200).entity("The existence of the connection is:"+ respon).build();
+	
+	
+}
+
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/CreationTool")
+public Response getCreationTool(String connectionName) throws ConnectorServiceException
+{
+	DataConnection dc3 = ASCLModelFactory.eINSTANCE.createDataConnection();
+	dc3.setName(connectionName);
+	List<ConnectionParameter> ConnParam_ = null;
+	StringBuffer conn = new StringBuffer("");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	ConnParam_ = nativeCasClient_.getDataConnectionParameters(dc3);
+	for(ConnectionParameter cp : ConnParam_)
+	{
+		String temp = cp.getName();
+		conn.append(temp);
+		conn.append("\t");
+		String temp1 = cp.getValue();
+		conn.append(temp1);
+		conn.append("\t");
+		String temp2 = cp.getDescription();
+		conn.append(temp2);
+				conn.append("\t");	
+		conn.append(",");
+	}
+	return Response.status(200).entity("The Data Connection Paramters are "+conn.toString()).build();
+			}
+
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/metaDataClasses")
+public Response getmetadataClass(JSONObject obj) throws ConnectorServiceException
+{
+	List<String> metadataClass_ = null;
+	StringBuffer stbuff_=new StringBuffer("");
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	HostSystem hostName = ASCLModelFactory.eINSTANCE.createHostSystem();
+    hostName.setName(hostSystem);
+    Connector connector = ASCLModelFactory.eINSTANCE.createConnector();  
+   // connector.setHostedBy_HostSystem(hostName); 
+    connector.setName(connectionType);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+     metadataClass_ = nativeCasClient_.getMetadataClasses(connector);
+    //for(String sh : metadataClass_)
+    //{
+   // 	stbuff_.append(sh);
+    //	stbuff_.append(",");
+    //}
+    return Response.status(200).entity("The datafiles are : "+connector.getName()+metadataClass_.get(0).toString()).build();
+	
+}
+
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/metaDataSchemaClass")
+public Response getMetadataSchemaClass(JSONObject obj)
+{
+	List<String> getmeta_ = null;
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	try
+	{
+		nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	    getmeta_ =nativeCasClient_.getMetadataSchemaClasses(hostObj, connectionType);
+	
+	}
+	catch(Exception e)
+	{
+		e.printStackTrace();
+	}
+	return Response.status(200).entity("The metadataschemaclasses of is"+getmeta_).build();
+}
+
+@GET
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/subTypeFilter")
+public Response getsubtypefilter(JSONObject obj) throws ConnectorServiceException
+{
+	List<SubtypeFilter> sft = null;
+	String hostSystem = null;
+	String connectionType = null;
+	hostSystem = (String) obj.get("HostSystem");
+	connectionType =(String) obj.get("ConnectionType");
+	HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	StringBuffer conn = new StringBuffer("");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	sft = nativeCasClient_.getSubtypeFilters(hostObj,connectionType);
+	for(SubtypeFilter sf : sft)
+	{
+		String tmp = sf.getName();
+		conn.append(tmp);
+		conn.append(",");
+	}
+	return Response.status(200).entity("The subtypeFilters are : "+conn.toString()).build();
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteConnection")
+public Response deleteConnection(String connectionName)
+{
+	boolean set = false;
+	String result =null;
+	DataConnection dc3 = ASCLModelFactory.eINSTANCE.createDataConnection();
+	dc3.setName(connectionName);
+	try
+	{
+		nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+		set = nativeCasClient_.delete(dc3);
+		if (set == true)
+			result = " is done";
+		else
+			result = "not done";
+		
+		
+	}
+	catch(ConnectorServiceException ex)
+	{
+		System.out.println(ex);
+	}
+	return Response.status(200).entity("The delete status of data connection "+result).build();
+	
+}
+
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteDatabase")
+public Response deleteDatabase(String database) throws ConnectorServiceException
+{
+	boolean set = false;
+	String result =null;
+	Database dataObj = ASCLModelFactory.eINSTANCE.createDatabase();
+	dataObj.setName(database);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	set = nativeCasClient_.delete(dataObj);
+	if (set == true)
+		result = "done";
+	else
+		result = "not done";
+	return Response.status(200).entity("The delete status of database "+dataObj.getName()+" is "+result).build();
+
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteDataCollection")
+public Response deleteDataCollection(String dataCollection) throws ConnectorServiceException
+{
+	boolean set = false;
+	String result =null;
+	DataCollection dataCollObj = ASCLModelFactory.eINSTANCE.createDataCollection();
+	dataCollObj.setName(dataCollection);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	set = nativeCasClient_.delete(dataCollObj);
+	if (set == true)
+		result = "done";
+	else
+		result = "not done";
+	return Response.status(200).entity("The delete status of dataCollection "+dataCollObj.getName()+" is "+result).build();
+
+	
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteDataFile")
+public Response deleteDataFile(String dataFile) throws ConnectorServiceException
+{
+	boolean set = false;
+	String result =null;
+	DataFile datafileObj = ASCLModelFactory.eINSTANCE.createDataFile();
+	datafileObj.setName(dataFile);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	set = nativeCasClient_.delete(datafileObj);
+	if (set == true)
+		result = "done";
+	else
+		result = "not done";
+	return Response.status(200).entity("The delete status of dataCollection "+datafileObj.getName()+" is "+result).build();
+
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteDataSchema")
+public Response deleteDataSchema(String dataSchema) throws ConnectorServiceException
+{
+	boolean set = false;
+	String result =null;
+	DataSchema dataSchemaObj = ASCLModelFactory.eINSTANCE.createDataSchema();
+	dataSchemaObj.setName(dataSchema);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	set = nativeCasClient_.delete(dataSchemaObj);
+	if (set == true)
+		result = "done";
+	else
+		result = "not done";
+	return Response.status(200).entity("The delete status of dataCollection "+dataSchemaObj.getName()+" is "+result).build();
+	
+}
+@GET
+@Consumes(MediaType.TEXT_PLAIN)
+@Produces(MediaType.TEXT_PLAIN)
+@Path("/deleteHostSytem")
+public Response deleteHostSystem(String hostSystem) throws ConnectorServiceException
+{
+	boolean set = false;
+	String result =null;
+	HostSystem hostObj = ASCLModelFactory.eINSTANCE.createHostSystem();
+	hostObj.setName(hostSystem);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	set = nativeCasClient_.delete(hostObj, true);
+	if (set == true)
+		result = "done";
+	else
+		result = "not done";
+	return Response.status(200).entity("The delete status of dataCollection "+hostObj.getName()+" is "+result).build();
+	
+}
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/discoverDataSchema")
+public Response getdiscoverdataDataschema(JSONObject obj) throws ConnectorServiceException
+{
+	 DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	List<DataSchema> dataschema = null;
+	String valueExpress = null;
+    List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+    StringBuffer conn = new StringBuffer("");
+ 		nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+ 		 hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+	dataschema = ((ConnectionServerSideClient) cn).discoverDataSchemas(true);
+	for( DataSchema d : dataschema)
+	{
+		String tmp = d.getName();
+		conn.append(tmp);
+		conn.append(",");
+	}
+	return Response.status(200).entity("The List of Data Schemas are :"+conn.toString()).build();
+}
+
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/discoverMetaData")
+public Response getdiscoverMetaData(JSONObject obj) throws ConnectorServiceException
+{
+	/*ConnectionLogical cn = null;
+	//cn = pojo.getConnlog_();
+	String connectionName = (String) obj.get("connectionName");
+	String metadataclass = (String) obj.get("metadataclass");
+	DataConnection datacon = ASCLModelFactory.eINSTANCE.createDataConnection();
+	datacon.setName(connectionName);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	cn = (ConnectionLogical) nativeCasClient_.getConnection(datacon);
+	String metadata_ = null;
+	String connString = null;
+		List<DataSchema> dataschema = null;
+		    StringBuffer conn = new StringBuffer("");
+	metadata_ = cn.discoverMetadata(metadataclass);*/
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	String metadata = null;
+	String valueExpress = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+ 		 String metadataclass = (String) obj.get("Metadataclass");
+ 		 hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+          metadata = cn.discoverMetadata(metadataclass);
+	return Response.status(200).entity("The metadata is"+metadata).build();
+	
+}
+
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/discoverMetaDataValues")
+public Response getmetaDataValues(JSONObject obj) throws ConnectorServiceException
+{
+	ConnectionLogical cn = null;
+	StringBuffer conn = new StringBuffer("");
+	//cn = pojo.getConnlog_();
+	String connectionName = (String) obj.get("connectionName");
+	String metadataclass = (String) obj.get("metadataclass");
+	DataConnection datacon = ASCLModelFactory.eINSTANCE.createDataConnection();
+	datacon.setName(connectionName);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	cn = (ConnectionLogical) nativeCasClient_.getConnection(datacon);
+	MetadataValuesLogical metadatavalue_ = null;
+	metadatavalue_ =  cn.discoverMetadataValues(metadataclass);
+	
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	MetadataValuesLogical metadatavalue_ = null;
+	StringBuffer conn = new StringBuffer("");
+	String valueExpress = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+ 		 String metadataclass = (String) obj.get("Metadataclass");
+ 		 hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+          metadatavalue_ =  cn.discoverMetadataValues(metadataclass);
+	for(MetadataValueLogical hg : metadatavalue_)
+	{
+		String tmp = hg.getValue();
+		conn.append(tmp);
+		conn.append("\n");
+		conn.append(",");
+		}
+	return Response.status(200).entity("The meta data values a"+conn.toString()).build();
+}
+
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/discoverDataCollections")
+public Response getdescribedatacollection(JSONObject obj) throws ConnectorServiceException
+{
+	ConnectionLogical cn = null;
+	String ds = (String) obj.get("dataschema");
+	String nameFilter = (String) obj.get("nameFilter");
+	String dataname = (String) obj.get("dataname");
+	DataConnection datacon = ASCLModelFactory.eINSTANCE.createDataConnection();
+	datacon.setName(dataname);
+	cn = (ConnectionLogical) nativeCasClient_.getConnection(datacon);
+	DataSchema desc = ASCLModelFactory.eINSTANCE.createDataSchema();
+	desc.setName(ds);
+	StringBuffer conn = new StringBuffer("");
+	List<DataCollection> dcm = null;
+
+//	cn = pojo.getConnlog_();
+	dcm = cn.discoverDataCollections(desc, true, true, nameFilter, true);
+	//pojo.setDcm(dcm);*/
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	StringBuffer conn = new StringBuffer("");
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	List<DataCollection> datacoll = null;
+	String valueExpress = null;
+	String ds = (String) obj.get("dataschema");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	String nameFilter = (String) obj.get("nameFilter");
+	DataSchema desc = ASCLModelFactory.eINSTANCE.createDataSchema();
+	desc.setName(ds);
+	hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+          datacoll = cn.discoverDataCollections(desc, true, true, nameFilter, true);
+	for(DataCollection buf:datacoll)
+	{
+		String tmp= buf.getName();
+		conn.append(tmp);
+		conn.append(",");
+		
+	}
+	
+	return	Response.status(200).entity("The list of dataCollections available for the dataSchema" +"\n"+desc.getName() +" are "+conn.toString()).build();
+	
+	
+}
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/viewData")
+public Response getviewData(JSONObject obj) throws ConnectorServiceException
+{
+	//ConnectionLogical cn = null;
+	byte arr[]= null;
+	//cn = pojo.getConnlog_();
+	int n =0;
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	String valueExpress = null;
+	String statement = (String) obj.get("statement");
+	String ds = (String) obj.get("dataschema");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	DataSchema desc = ASCLModelFactory.eINSTANCE.createDataSchema();
+	desc.setName(ds);
+	hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+	n =  cn.createDataProducer(statement);
+	arr  = cn.getData(n,100);
+	String string = new String(arr,StandardCharsets.UTF_8);
+	return Response.status(200).entity("The create data "+string).build();
+}
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/viewsample")
+public Response getview(JSONObject obj) throws ConnectorServiceException
+{
+//	ConnectionLogical cn = null;
+	int n= 0;
+	byte arr[]= null;
+	//List<DataCollection>  dcm = null;
+	//dcm = pojo.getDcm();
+	//DataCollection ds = null;
+	//ds = dcm.get(1);
+	//cn = pojo.getConnlog_();
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	String valueExpress = null;
+	String ds = (String) obj.get("dataschema");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	DataCollection desc = ASCLModelFactory.eINSTANCE.createDataCollection();
+	desc.setName(ds);
+	hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+	n = cn.createDataProducer(desc, "*", null, null);
+	arr = cn.getData(1, n);
+	String string = new String(arr,StandardCharsets.UTF_8);
+	return Response.status(200).entity("The name is"+n+"\n"+arr+"\n"+string).build();
+	
+	
+}
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/describedataBase")
+public Response getdescribeDatabase(JSONObject obj) throws ConnectorServiceException
+{
+	ConnectionLogical cn = null;
+	cn = pojo.getConnlog_();
+	Database db = null;
+	db = cn.describeDatabase();
+	Database db = null;
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	String valueExpress = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	String ds = (String) obj.get("dataschema");
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	DataSchema desc = ASCLModelFactory.eINSTANCE.createDataSchema();
+	desc.setName(ds);
+	hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+          db = cn.describeDatabase();
+	return Response.status(200).entity("The description of database is \n"+"Name :"+db.getDBMS()+"\n"+"CreationTool:"+db.getCreationTool()+"\n"+"Long Description :"+db.getLongDescription()+"\n"+"Database Name :"+db.getName()+"\n"+"Path of DB :"+db.getPath()+"\n"+"DB server :"+db.getServer()+"\n"+"Store Type:"+db.getStoreType()+"\n"+"Version :"+db.getVersion()).build();
+	
+}
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/describedatacollection")
+public Response getdescribedataCollection(JSONObject obj) throws ConnectorServiceException
+{
+	ConnectionLogical cn = null;
+	cn = pojo.getConnlog_();
+	List<DataCollection> dcm = null;
+	DataCollection dfg = null;
+	dcm = pojo.getDcm();
+	DataCollection dc = null;
+	dc = dcm.get(1);
+	dfg = cn.describeDataCollection(dc, true, true, true);*/
+	DataCollection dfg = null;
+	DataConnection dc =null ;
+	String StageType= null;
+	String DataName= null;
+	String hostSystem = null;
+	String valueExpress = null;
+	List<ConnectionParameter> connectionParameters = new ArrayList<ConnectionParameter>();
+	String ds = (String) obj.get("dataCollection");
+	DataCollection datacollection= ASCLModelFactory.eINSTANCE.createDataCollection();
+	datacollection.setName(ds);
+	nativeCasClient_ = ConnectorAccessorClientFactory.createConnectorAccessorServerSideClient();
+	hostSystem = (String) obj.get("HostSystem");
+		  HostSystem hostObj= ASCLModelFactory.eINSTANCE.createHostSystem();
+		  hostObj.setName(hostSystem);
+         DataName  = (String) obj.get("name");
+         StageType=(String) obj.get("StageType");
+         JSONArray arrObj = (JSONArray) obj.get("DSParameterVal");
+		 for (int i = 0, size = arrObj.size(); i < size; i++)
+		    {
+			    ConnectionParameter cnp = new  ConnectionParameter();
+			    JSONObject objectInArray= (JSONObject) arrObj.get(i);
+		    	String paramName=  (String) objectInArray.get((String)"parameterName");
+		    	String parameterType = (String) objectInArray.get((String)"parameterType");
+		        String valueExpression= (String) objectInArray.get((String)"valueExpression");
+		        if(paramName=="Password")
+		        {
+		        	valueExpress = DSEncryption.decrypt(valueExpression);
+		        }
+		        else
+		        {
+		        	valueExpress = valueExpression;
+		        }
+		        cnp.setName(paramName); 
+		        cnp.setType(Integer.parseInt(parameterType));
+		        cnp.setValue(valueExpress);
+		        connectionParameters.add(cnp);
+		    }
+		  dc = nativeCasClient_.createDataConnection(hostObj, StageType, connectionParameters);
+          dc.setName(DataName);
+          persist_ = nativeCasClient_.persist(dc, true);
+          ConnectionLogical cn = (ConnectionLogical) nativeCasClient_.getConnection(dc);
+      	dfg = cn.describeDataCollection(datacollection, true, true, true);
+  
+      String x =	dfg.getName();
+      String y= 	dfg.getSubtype();
+      String c = dfg.getViewExpression();
+      String d = dfg.getNameQuotingChar();
+      String datafil = null;
+      String e = null;
+      TypeCodeEnum h = null;
+      ODBCTypeEnum o = null;
+       int n = 0;
+       int m = 0;
+       boolean bg = false;
+     
+         
+     for(   DataField df  : (List<DataField>)dfg.getContains_DataField())
+     {
+    	datafil  =	df.getName();
+    	h = df.getTypeCode();
+    o =	df.getODBCType();
+  n =  df.getMaximumLength();
+  m = df.getMinimumLength();
+e =  df.getNativeType();
+bg = df.getIsNullable();
+
+    	
+     }
+        DataCollection collection = (DataCollection) dataGroup;
+        stream.println("    Collection: "+collection.getName());
+        if (fDumpAttributes)
+        {
+           stream.println("           name qualifier : "+collection.getNameQualifier());
+           stream.println("           description    : "+collection.getLongDescription());
+           stream.println("           subtype        : "+collection.getSubtype());
+           stream.println("           isView         : "+collection.getIsView());
+           stream.println("           isSystem       : "+collection.getIsSystem());
+           stream.println("           view expression: "+collection.getViewExpression());
+           stream.println("           name quote char: "+collection.getNameQuotingChar());
+        }
+        for (DataField df : (List<DataField>)collection.getContains_DataField())
+        {
+           stream.println("       Field: "+df.getName());
+           if (fDumpAttributes)
+           {
+              stream.println("           description: "+df.getLongDescription());
+              stream.println("           sequence   : "+df.getSequence());
+              stream.println("           type code  : "+df.getTypeCode());
+              stream.println("           ODBC type  : "+df.getODBCType());
+              stream.println("           min length : "+df.getMinimumLength());
+              stream.println("           max length : "+df.getMaximumLength());
+              stream.println("           fraction   : "+df.getFractionDigits());
+              stream.println("           disp size  : "+df.getDisplaySize());
+              stream.println("           native type: "+df.getNativeType());
+              stream.println("           default val: "+df.getDefaultValue());
+              stream.println("           nullable   : "+df.getIsNullable());
+              stream.println("           signed     : "+df.getIsSigned());
+              stream.println("           unique     : "+df.getIsUnique());
+              stream.println("           computed   : "+df.getIsComputed());
+           }
+        }
+  
+         
+
+	return Response.status(200).entity("Describe data Collection"+"\n"+"Name:"+x+"\n"+"SUBTYPE:"+y+"\n"+"VIEW EXPRESSION:"+c+"\n"+dfg.getNameQualifier()+"\n"+"NAME:"+datafil+"\n"+
+	"TYPECODE:"+h+"\n"+"ODBC TYPE:"+o+"\n"+"MAXIMUM LENGTH:"+n+"\n"+"MINIMUM LENGHT:"+m+"\n"+"NATIVE TYPE:"+e+"\n"+"ISNULLABLE:"+bg).build();
+	
+}
+
+
+}

@@ -1,0 +1,15 @@
+package com.ibm.iis.cas;
+import java.util.HashSet;
+import java.util.Set;
+import javax.ws.rs.core.Application;
+public class sampl extends Application 
+{ 
+	@Override 
+	public Set<Class<?>> getClasses() 
+	{ 
+		Set<Class<?>> s = new HashSet<Class<?>>(); 
+		s.add(sample.class);
+        s.add(JSON4JObjectProvider.class);
+        s.add(JSON4JArrayProvider.class);
+		return s; } 
+}
